@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-
+const crypto = require('crypto')
 const {promisify} = require("util");
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
@@ -140,9 +140,58 @@ exports.forgotPassword = catchAsync(async (req,res,next) => {
 
 })
 
-exports.resetPassword = (req,res,next) => {
+exports.resetPassword = catchAsync(async (req,res,next) => {
+  // 1) get user based on the token 
+
+  const hashedToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+  const user = await User.findOne({passwordResetToken:hashedToken,passwordResetexpires:{
+    $gt:Date.now()
+  }})
+  if(!user) return next(new AppError("token is invalid or has expired",400))
+   
+  //2)if the token has not expired and there is a user set the new password
+  user.password = req.body.password;
+  user.passwordConfirm = req.body.passwordConfirm
+  user.passwordChangedAt = Date.now() - 1000;
+  user.passwordResetToken = undefined;
+  user.passwordResetexpires = undefined;
+
+  await user.save()
+
+  //3)update the changed passwordAt prooperty
   
-}
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    status: 'success',
+    token
+  });
+  //4)log the user in
+})
+
+exports.updatePassword = catchAsync(async(req,res,next) => {
+  const { user } = req;
+
+  const isMatch = await bcrypt.compare(req.body.oldPassword,user.password);
+  if(!isMatch) return next(new AppError("password is in correct",401));
+
+  user.password = req.body.newPassword
+  user.passwordConfirm = req.body.passwordConfirm
+  user.passwordChangedAt = Date.now() - 1000;
+
+  await user.save()
+
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    status:'success',
+    token,
+    message:'password updated correctly'
+  })
+})
+
+
+
 /**
  * 
  * export.forgetPassword = catchAsync(async(req,res,next) => {
