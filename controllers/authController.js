@@ -170,7 +170,7 @@ exports.resetPassword = catchAsync(async (req,res,next) => {
 })
 
 exports.updatePassword = catchAsync(async(req,res,next) => {
-  const { user } = req;
+  const  user  = await User.findById(req.user.id).select('+password');
 
   const isMatch = await bcrypt.compare(req.body.oldPassword,user.password);
   if(!isMatch) return next(new AppError("password is in correct",401));
