@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const validator = require('validator');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
+const { type } = require('os');
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -47,7 +48,12 @@ const userSchema = new mongoose.Schema({
   },
   passwordChangedAt:Date,
   passwordResetToken:String,
-  passwordResetexpires:Date
+  passwordResetexpires:Date,
+  active:{
+    type:Boolean,
+    default:true,
+    select:false
+  }
 });
 
 // between recieving the data and storing it in the database
@@ -59,6 +65,18 @@ userSchema.pre('save', async function(next) {
   next();
 });
 
+userSchema.pre("save" , function(next){
+  if(!this.isModified("password") || this.isNew){
+    return next();
+  }
+  this.passwordChangedAt = Date.now() - 1000 ;
+  next()
+})
+
+userSchema.pre(/^find/,function(next){
+  this.find({active:{$ne:false}});
+  next();
+})
 //instance method available just for all documents from this schema
 
 userSchema.methods.changePasswordAfter = function(jwtTimeStamp){

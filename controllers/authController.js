@@ -152,7 +152,6 @@ exports.resetPassword = catchAsync(async (req,res,next) => {
   //2)if the token has not expired and there is a user set the new password
   user.password = req.body.password;
   user.passwordConfirm = req.body.passwordConfirm
-  user.passwordChangedAt = Date.now() - 1000;
   user.passwordResetToken = undefined;
   user.passwordResetexpires = undefined;
 
@@ -177,7 +176,7 @@ exports.updatePassword = catchAsync(async(req,res,next) => {
 
   user.password = req.body.newPassword
   user.passwordConfirm = req.body.passwordConfirm
-  user.passwordChangedAt = Date.now() - 1000;
+
 
   await user.save()
 
