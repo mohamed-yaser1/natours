@@ -97,7 +97,13 @@ const tourSchema = mongoose.Schema(
         type:mongoose.Schema.ObjectId,
         ref:'User'
       }
-    ]
+    ],
+    // reviews:[
+    //   {
+    //     type:mongoose.Schema.ObjectId,
+    //     ref:'Review'
+    //   }
+    // ],
   },
   {
     toJSON: { virtuals: true },
@@ -105,8 +111,12 @@ const tourSchema = mongoose.Schema(
   }
 );
 
-// ⁡⁢⁣⁢document⁡ ⁡⁢⁣⁢middleware⁡ run before .save() and create()
+// tourSchema.index({price:1})
+tourSchema.index({price:1,ratingsAverage:-1})
+tourSchema.index({slug:1})
 
+
+// ⁡⁢⁣⁢document⁡ ⁡⁢⁣⁢middleware⁡ run before .save() and create()
 tourSchema.pre('save', function(next) {
   this.slug = slugify(this.name, { lower: true });
   next();
